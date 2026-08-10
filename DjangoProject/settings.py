@@ -77,7 +77,9 @@ DATABASES = {
 }
 
 # CORS 配置（允许前端访问）
+# CORS 配置（允许前端访问）
 CORS_ALLOWED_ORIGINS = [
+    "https://pxhong.github.io",  # ✅ 添加你的 GitHub Pages 域名
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
