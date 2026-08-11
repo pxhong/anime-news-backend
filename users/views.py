@@ -88,3 +88,18 @@ class DeleteAccountView(APIView):
             {'message': '账号已成功注销'},
             status=status.HTTP_200_OK
         )
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import AllowAny
+
+User = get_user_model()
+
+class CheckUsernameView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        username = request.GET.get('username', '')
+        if not username:
+            return Response({'exists': False})
+        
+        exists = User.objects.filter(username=username).exists()
+        return Response({'exists': exists})
