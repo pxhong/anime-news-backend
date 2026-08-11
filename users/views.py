@@ -6,7 +6,9 @@ from .models import User
 from .serializers import UserSerializer, LoginSerializer, UserProfileSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
+
+User = get_user_model()
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -68,29 +70,18 @@ class AvatarUploadView(APIView):
         return Response(serializer.data)
 
 
-# ... 保持原有代码 ...
-
 class DeleteAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request):
         user = request.user
-
-        # 检查是否是超级管理员（超级管理员不能通过此方式删除）
         if user.is_superuser:
             return Response(
-                {'error': '超级管理员不能通过此方式注销账号，请在后台管理操作'},
+                {'error': '超级管理员不能通过此方式注销账号'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        # 删除用户（Django会自动删除关联的数据）
         user.delete()
-
-        return Response(
-            {'message': '账号已成功注销'},
-            status=status.HTTP_200_OK
-        )
-User = get_user_model()
+        return Response({'message': '账号已成功注销'}, status=status.HTTP_200_OK)
 
 
 class CheckUsernameView(APIView):
@@ -100,6 +91,5 @@ class CheckUsernameView(APIView):
         username = request.GET.get('username', '')
         if not username:
             return Response({'exists': False})
-
         exists = User.objects.filter(username=username).exists()
         return Response({'exists': exists})
