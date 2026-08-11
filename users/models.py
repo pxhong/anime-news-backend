@@ -46,8 +46,24 @@ class User(AbstractUser):
         return f'{self.username} ({self.account})'
 
     def get_avatar_url(self):
+        """获取头像URL，如果没有则生成默认头像"""
         if self.avatar:
-            return self.avatar.url
+            # ✅ 获取相对路径，从 URL 中提取 /media/ 开头的部分
+            url = self.avatar.url
+            # 如果包含 http://127.0.0.1，提取 /media/ 之后的部分
+            if 'http://127.0.0.1' in url:
+                # 找到 /media/ 的位置
+                media_index = url.find('/media/')
+                if media_index != -1:
+                    return url[media_index:]  # 返回 /media/xxx 相对路径
+            # 如果已经是相对路径，直接返回
+            if url.startswith('/media/'):
+                return url
+            # 如果已经是 https 完整地址，直接返回
+            if url.startswith('https://'):
+                return url
+            # 否则返回 /media/ + 文件名
+            return f'/media/{self.avatar.name}'
         return f'https://ui-avatars.com/api/?name={self.username}&background=FB7299&color=fff&size=128'
 
     @staticmethod
