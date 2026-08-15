@@ -9,12 +9,10 @@ urlpatterns = [
     path('api/', include('users.urls')),
     path('api/', include('works.urls')),
 
-    # ✅ 视频流接口（支持拖动进度条）
-    # 用户访问 /media/video/xxx.mp4 时会走视频流接口
-    path('media/<path:path>', video_stream),
+    # ✅ 唯一视频流入口
+    path('media/<path:path>', video_stream, name='video_stream'),
 ]
 
-# 开发环境下提供静态文件和媒体文件访问
+# ✅ 只在 DEBUG=True 时提供静态文件（不影响 media 路由）
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
