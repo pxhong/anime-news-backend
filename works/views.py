@@ -64,6 +64,19 @@ class WorkViewSet(viewsets.ModelViewSet):
             'likes_count': work.likes
         })
 
+    # ✅ 当前登录用户的作品列表（分页）
+    @action(detail=False, methods=['get'])
+    def mine(self, request):
+        if not request.user.is_authenticated:
+            return Response({'detail': '请先登录'}, status=401)
+        queryset = Work.objects.filter(author=request.user).order_by('-created_at')
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     # ✅ 修复：perform_destroy 必须在类内部（缩进 4 格）
     def perform_destroy(self, instance):
         # 删除视频文件
