@@ -77,12 +77,10 @@ class WorkViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    # ✅ 修复：perform_destroy 必须在类内部（缩进 4 格）
+    # ✅ 删除时清理文件
     def perform_destroy(self, instance):
-        # 删除视频文件
         if instance.file:
             instance.file.delete(save=False)
-        # 删除封面图
         if instance.cover:
             instance.cover.delete(save=False)
         instance.delete()
