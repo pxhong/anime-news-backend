@@ -16,3 +16,4 @@ urlpatterns = [
 # ✅ 只在 DEBUG=True 时提供静态文件（不影响 media 路由）
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# ❌ 删除 media 的 static()，避免与 video_stream 冲突
