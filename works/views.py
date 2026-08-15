@@ -64,35 +64,35 @@ class WorkViewSet(viewsets.ModelViewSet):
             'likes_count': work.likes
         })
 
+    # ✅ 修复：perform_destroy 必须在类内部（缩进 4 格）
+    def perform_destroy(self, instance):
+        # 删除视频文件
+        if instance.file:
+            instance.file.delete(save=False)
+        # 删除封面图
+        if instance.cover:
+            instance.cover.delete(save=False)
+        instance.delete()
+
 
 # ============================================================
-# ✅ 视频流接口（支持拖动进度条）- 完整修复版
+# 视频流接口
 # ============================================================
 
 def video_stream(request, path):
-    """
-    视频流接口，支持 Range 请求（拖动进度条）
-    使用 FileResponse 流式返回，避免 OOM
-    """
-    # 构建完整文件路径
+    """视频流接口，支持 Range 请求"""
     file_path = os.path.join(settings.MEDIA_ROOT, path)
 
-    # 检查文件是否存在
     if not os.path.exists(file_path):
         return HttpResponse(status=404)
 
-    # 获取文件大小
     file_size = os.path.getsize(file_path)
-
-    # 获取文件类型
     content_type, _ = mimetypes.guess_type(file_path)
     if not content_type:
         content_type = 'video/mp4'
 
-    # 获取 Range 头
     range_header = request.META.get('HTTP_RANGE', '').strip()
 
-    # ✅ 如果没有 Range 请求，使用 FileResponse 流式返回（避免 OOM）
     if not range_header or not range_header.startswith('bytes='):
         response = FileResponse(
             open(file_path, 'rb'),
@@ -102,7 +102,6 @@ def video_stream(request, path):
         response['Content-Length'] = file_size
         return response
 
-    # 解析 Range 请求
     range_value = range_header[6:]
     start = 0
     end = file_size - 1
@@ -114,23 +113,19 @@ def video_stream(request, path):
         if parts[1]:
             end = int(parts[1])
 
-    # ✅ 修复：处理后缀范围 bytes=-500（请求最后 500 字节）
     if range_value.startswith('-'):
         start = file_size - int(range_value[1:])
         end = file_size - 1
 
-    # ✅ 边界检查：如果 start 超出范围，返回 416
     if start >= file_size or start > end:
         response = HttpResponse(status=416)
         response['Content-Range'] = f'bytes */{file_size}'
         return response
 
-    # 限制范围
     start = max(0, start)
     end = min(end, file_size - 1)
     length = end - start + 1
 
-    # ✅ 使用 FileResponse 流式返回片段（避免 OOM）
     response = FileResponse(
         open(file_path, 'rb'),
         content_type=content_type,
