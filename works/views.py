@@ -91,59 +91,24 @@ class WorkViewSet(viewsets.ModelViewSet):
 # ============================================================
 
 def video_stream(request, path):
-    """视频流接口，支持 Range 请求"""
+    """
+    视频流接口（简化版）
+    """
+    import os
+    from django.http import FileResponse
+    from django.conf import settings
+
     file_path = os.path.join(settings.MEDIA_ROOT, path)
 
     if not os.path.exists(file_path):
         return HttpResponse(status=404)
 
-    file_size = os.path.getsize(file_path)
-    content_type, _ = mimetypes.guess_type(file_path)
-    if not content_type:
-        content_type = 'video/mp4'
-
-    range_header = request.META.get('HTTP_RANGE', '').strip()
-
-    if not range_header or not range_header.startswith('bytes='):
-        response = FileResponse(
-            open(file_path, 'rb'),
-            content_type=content_type
-        )
-        response['Accept-Ranges'] = 'bytes'
-        response['Content-Length'] = file_size
-        return response
-
-    range_value = range_header[6:]
-    start = 0
-    end = file_size - 1
-
-    if '-' in range_value:
-        parts = range_value.split('-')
-        if parts[0]:
-            start = int(parts[0])
-        if parts[1]:
-            end = int(parts[1])
-
-    if range_value.startswith('-'):
-        start = file_size - int(range_value[1:])
-        end = file_size - 1
-
-    if start >= file_size or start > end:
-        response = HttpResponse(status=416)
-        response['Content-Range'] = f'bytes */{file_size}'
-        return response
-
-    start = max(0, start)
-    end = min(end, file_size - 1)
-    length = end - start + 1
-
+    # ✅ 直接返回 FileResponse，让 Django 处理 Range
     response = FileResponse(
         open(file_path, 'rb'),
-        content_type=content_type,
-        status=206
+        content_type='video/mp4',
+        as_attachment=False
     )
-    response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
     response['Accept-Ranges'] = 'bytes'
-    response['Content-Length'] = length
-
+    response['Content-Length'] = os.path.getsize(file_path)
     return response
