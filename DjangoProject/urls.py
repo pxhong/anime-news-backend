@@ -9,11 +9,11 @@ urlpatterns = [
     path('api/', include('users.urls')),
     path('api/', include('works.urls')),
 
-    # ✅ 唯一视频流入口
+    # ✅ 视频流接口
     path('media/<path:path>', video_stream, name='video_stream'),
 ]
 
-# ✅ 只在 DEBUG=True 时提供静态文件（不影响 media 路由）
+# ✅ 开发环境下提供媒体文件（Django 静态服务）
 if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-# ❌ 删除 media 的 static()，避免与 video_stream 冲突
