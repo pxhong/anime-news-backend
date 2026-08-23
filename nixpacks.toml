@@ -1,2 +1,13 @@
+[providers.python]
+# 明确使用 Python provider
+
 [phases.setup]
-nixPkgs = ["python310", "ffmpeg"]
+nixPkgs = ["ffmpeg"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[phases.build]
+cmds = []
+
+[start]
