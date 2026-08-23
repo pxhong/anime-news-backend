@@ -187,8 +187,10 @@ class WorkViewSet(viewsets.ModelViewSet):
     def _merge_chunks(self, file_id, temp_dir, total_chunks, request):
         """合并分片 + 自动转码"""
         file_ext = request.POST.get('file_ext', '.mp4')
-        filename = f'{file_id}{file_ext}'
-
+        if file_id.lower().endswith(file_ext.lower()):
+            filename = file_id
+        else:
+            filename = f'{file_id}{file_ext}'
         date_path = datetime.now().strftime('%Y/%m')
         save_dir = os.path.join(settings.MEDIA_ROOT, f'works/videos/{date_path}')
         os.makedirs(save_dir, exist_ok=True)
