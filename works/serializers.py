@@ -5,7 +5,7 @@ from users.serializers import UserSerializer
 
 class WorkSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-
+    file = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     class Meta:
         model = Work
         fields = [
