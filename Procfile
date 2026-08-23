@@ -1,1 +1,1 @@
-web: gunicorn DjangoProject.wsgi:application --bind 0.0.0.0:$PORT --timeout 300 --workers 2
+web: sh -c "apt-get update -qq && apt-get install -y -qq ffmpeg >/dev/null 2>&1; gunicorn DjangoProject.wsgi:application --bind 0.0.0.0:$PORT --timeout 300 --workers 2"
