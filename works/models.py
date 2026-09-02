@@ -43,9 +43,13 @@ class Work(models.Model):
         verbose_name = '作品'
         verbose_name_plural = '作品'
 
+        indexes = [
+            models.Index(fields=['created_at'], name='work_created_idx'),
+            models.Index(fields=['author', '-created_at'], name='work_author_created_idx'),
+        ]
+
     def __str__(self):
         return self.title
-
 
 # ✅ Like 模型必须放在 Work 模型外面，独立定义
 class Like(models.Model):
