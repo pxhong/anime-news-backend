@@ -167,6 +167,7 @@ if OSS_BUCKET_NAME and OSS_ENDPOINT and OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SEC
     AWS_S3_REGION_NAME = OSS_ENDPOINT.split('.')[1]  # 从 endpoint 提取 region，如 ap-shanghai
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
+    AWS_S3_ADDRESSING_STYLE = 'virtual'  # ✅ 腾讯云 COS 必须用 virtual-hosted style
     AWS_QUERYSTRING_AUTH = True          # 私有桶：URL 带签名
     AWS_QUERYSTRING_EXPIRE = 3600        # 签名 URL 有效期 1 小时
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
