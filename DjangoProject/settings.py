@@ -140,3 +140,37 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
+
+
+# ============================================================
+# ✅ 腾讯云 COS 对象存储（替换本地 media 存储）
+# ============================================================
+OSS_BUCKET_NAME = os.environ.get('OSS_BUCKET_NAME', '')
+OSS_ENDPOINT = os.environ.get('OSS_ENDPOINT', '')
+OSS_ACCESS_KEY_ID = os.environ.get('OSS_ACCESS_KEY_ID', '')
+OSS_ACCESS_KEY_SECRET = os.environ.get('OSS_ACCESS_KEY_SECRET', '')
+
+if OSS_BUCKET_NAME and OSS_ENDPOINT and OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SECRET:
+    # ✅ 启用 COS 存储
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    AWS_ACCESS_KEY_ID = OSS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY = OSS_ACCESS_KEY_SECRET
+    AWS_STORAGE_BUCKET_NAME = OSS_BUCKET_NAME
+    AWS_S3_ENDPOINT_URL = f"https://{OSS_ENDPOINT}"
+    AWS_S3_REGION_NAME = OSS_ENDPOINT.split('.')[1]  # 从 endpoint 提取 region，如 ap-shanghai
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = True          # 私有桶：URL 带签名
+    AWS_QUERYSTRING_EXPIRE = 3600        # 签名 URL 有效期 1 小时
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+else:
+    # 未配置 COS 时退回本地 media（本地开发用）
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
