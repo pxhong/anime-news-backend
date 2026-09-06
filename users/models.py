@@ -1,17 +1,18 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import random
+import string
 
 
 class User(AbstractUser):
-    # ✅ 将 username 改为可重复的昵称
+    # ✅ 昵称（唯一，可修改，注册时自动生成）
     username = models.CharField(
         max_length=150,
         verbose_name='昵称',
-        unique=False  # ✅ 允许重复
+        unique=True  # ✅ 改为唯一
     )
 
-    # ✅ 新增账号字段（作为登录凭证）
+    # ✅ 账号（保留 11 位数字，作登录凭证之一）
     account = models.CharField(
         max_length=11,
         unique=True,
@@ -19,11 +20,27 @@ class User(AbstractUser):
         verbose_name='账号'
     )
 
+    # ✅ 邮箱（唯一，可登录）
+    email = models.EmailField(
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='邮箱'
+    )
+
+    # ✅ 手机号（唯一，可登录，可空）
+    phone = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='手机号'
+    )
+
     # 设置 account 为 USERNAME_FIELD（登录字段）
     USERNAME_FIELD = 'account'
 
-    # 注册时必须提供的字段（除了密码和 account）
-    REQUIRED_FIELDS = ['username']  # ✅ 注册时需要提供昵称
+    REQUIRED_FIELDS = ['username']
 
     avatar = models.ImageField(
         upload_to='avatars/%Y/%m/',
@@ -46,23 +63,16 @@ class User(AbstractUser):
         return f'{self.username} ({self.account})'
 
     def get_avatar_url(self):
-        """获取头像URL，如果没有则生成默认头像"""
         if self.avatar:
-            # ✅ 获取相对路径，从 URL 中提取 /media/ 开头的部分
             url = self.avatar.url
-            # 如果包含 http://127.0.0.1，提取 /media/ 之后的部分
             if 'http://127.0.0.1' in url:
-                # 找到 /media/ 的位置
                 media_index = url.find('/media/')
                 if media_index != -1:
-                    return url[media_index:]  # 返回 /media/xxx 相对路径
-            # 如果已经是相对路径，直接返回
+                    return url[media_index:]
             if url.startswith('/media/'):
                 return url
-            # 如果已经是 https 完整地址，直接返回
             if url.startswith('https://'):
                 return url
-            # 否则返回 /media/ + 文件名
             return f'/media/{self.avatar.name}'
         return f'https://ui-avatars.com/api/?name={self.username}&background=FB7299&color=fff&size=128'
 
@@ -75,3 +85,14 @@ class User(AbstractUser):
             account = first_digit + rest_digits
             if not User.objects.filter(account=account).exists():
                 return account
+
+    @staticmethod
+    def generate_username():
+        """生成随机唯一昵称：用户 + 时间戳 + 随机字符，如 用户16725361xs"""
+        while True:
+            # 格式：用户 + 时间戳后6位 + 2位随机字符
+            ts = str(int(random.random() * 1000000))
+            chars = ''.join(random.choices(string.ascii_lowercase + string.digits, k=2))
+            username = f'用户{ts}{chars}'
+            if not User.objects.filter(username=username).exists():
+                return username
