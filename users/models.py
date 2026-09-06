@@ -96,3 +96,52 @@ class User(AbstractUser):
             username = f'用户{ts}{chars}'
             if not User.objects.filter(username=username).exists():
                 return username
+class EmailVerifyCode(models.Model):
+    """邮箱验证码"""
+    email = models.EmailField(verbose_name='邮箱')
+    code = models.CharField(max_length=6, verbose_name='验证码')
+    purpose = models.CharField(
+        max_length=20,
+        default='register',
+        verbose_name='用途(register/reset)'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    is_used = models.BooleanField(default=False, verbose_name='是否已使用')
+
+    class Meta:
+        db_table = 'email_verify_codes'
+        verbose_name = '邮箱验证码'
+        verbose_name_plural = '邮箱验证码'
+        ordering = ['-created_at']
+
+    def is_expired(self):
+        """验证码10分钟有效"""
+        return timezone.now() > self.created_at + timedelta(minutes=10)
+
+    def __str__(self):
+        return f'{self.email} - {self.code}'
+
+    class EmailVerifyCode(models.Model):
+        """邮箱验证码"""
+        email = models.EmailField(verbose_name='邮箱')
+        code = models.CharField(max_length=6, verbose_name='验证码')
+        purpose = models.CharField(
+            max_length=20,
+            default='register',
+            verbose_name='用途(register/reset)'
+        )
+        created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+        is_used = models.BooleanField(default=False, verbose_name='是否已使用')
+
+        class Meta:
+            db_table = 'email_verify_codes'
+            verbose_name = '邮箱验证码'
+            verbose_name_plural = '邮箱验证码'
+            ordering = ['-created_at']
+
+        def is_expired(self):
+            """验证码10分钟有效"""
+            return timezone.now() > self.created_at + timedelta(minutes=10)
+
+        def __str__(self):
+            return f'{self.email} - {self.code}'
