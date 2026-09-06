@@ -2,18 +2,81 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User
-from .serializers import UserSerializer, LoginSerializer, UserProfileSerializer
+from django.utils import timezone
+from datetime import timedelta
+from .models import User, EmailVerifyCode
+from .serializers import (
+    UserSerializer, LoginSerializer, UserProfileSerializer,
+    SendCodeSerializer, RegisterSerializer
+)
+from .utils import generate_code, send_verify_email, generate_random_username
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny
 
 User = get_user_model()
 
 
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    permission_classes = [permissions.AllowAny]
-    serializer_class = UserSerializer
+class SendCodeView(APIView):
+    """发送邮箱验证码（注册用）"""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = SendCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+
+        # 防刷：60秒内不能重复发送
+        recent = EmailVerifyCode.objects.filter(
+            email=email, purpose='register',
+            created_at__gte=timezone.now() - timedelta(seconds=60)
+        ).exists()
+        if recent:
+            return Response(
+                {'detail': '发送太频繁，请60秒后再试'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        code = generate_code()
+        EmailVerifyCode.objects.create(email=email, code=code, purpose='register')
+        ok = send_verify_email(email, code)
+        if not ok:
+            return Response(
+                {'detail': '邮件发送失败，请稍后重试'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        return Response({'detail': '验证码已发送到您的邮箱'})
+
+
+class RegisterView(APIView):
+    """邮箱+验证码+密码注册，成功后自动登录"""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+
+        # 自动生成账号和随机用户名
+        account = User.generate_account()
+        username = generate_random_username()
+
+        user = User.objects.create_user(
+            account=account,
+            username=username,
+            email=email,
+            password=password
+        )
+
+        # 自动登录：生成 token
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': UserSerializer(user).data,
+            'message': '注册成功'
+        }, status=status.HTTP_201_CREATED)
 
 
 class LoginView(APIView):
