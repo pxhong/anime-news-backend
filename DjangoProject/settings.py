@@ -160,6 +160,7 @@ OSS_ACCESS_KEY_SECRET = os.environ.get('OSS_ACCESS_KEY_SECRET', '')
 
 if OSS_BUCKET_NAME and OSS_ENDPOINT and OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SECRET:
     # ✅ 启用 COS 存储
+    USE_COS_STORAGE = True
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
@@ -181,6 +182,7 @@ if OSS_BUCKET_NAME and OSS_ENDPOINT and OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SEC
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 else:
     # 未配置 COS 时退回本地 media（本地开发用）
+    USE_COS_STORAGE = False
     MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # ============================================================

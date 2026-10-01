@@ -5,7 +5,9 @@ import subprocess
 from datetime import datetime
 
 from django.conf import settings
-from django.http import FileResponse, HttpResponse
+from django.core.files import File
+from django.core.files.storage import default_storage
+from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -208,9 +210,34 @@ class WorkViewSet(viewsets.ModelViewSet):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         # 自动转码
+        # 自动转码
         transcoded, final_path = transcode_video(save_path)
 
         relative_path = f'works/videos/{date_path}/{os.path.basename(final_path)}'
+
+        # 若配置了 COS：上传到 COS，成功后删除本地文件
+        if getattr(settings, 'USE_COS_STORAGE', False):
+            try:
+                with open(final_path, 'rb') as f:
+                    relative_path = default_storage.save(relative_path, File(f))
+                os.remove(final_path)
+                print(f'[COS] 视频已上传: {relative_path}', flush=True)
+                return Response({
+                    'status': 'complete',
+                    'file_path': relative_path,
+                    'full_url': f'/media/{relative_path}',
+                    'transcoded': transcoded,
+                    'warning': '' if transcoded else '视频转码失败，已保留原文件'
+                }, status=status.HTTP_200_OK)
+            except Exception as e:
+                # 上传 COS 失败：保留本地文件兜底，返回警告
+                return Response({
+                    'status': 'complete',
+                    'file_path': relative_path,
+                    'full_url': f'/media/{relative_path}',
+                    'transcoded': transcoded,
+                    'warning': f'视频上传 COS 失败，已保留服务器本地文件（{e}）'
+                }, status=status.HTTP_200_OK)
 
         return Response({
             'status': 'complete',
@@ -220,12 +247,20 @@ class WorkViewSet(viewsets.ModelViewSet):
             'warning': '' if transcoded else '视频转码失败，已保留原文件'
         }, status=status.HTTP_200_OK)
 
-
 # ============================================================
 # 视频流接口（模块级普通视图，OK）
 # ============================================================
 
 def video_stream(request, path):
+    # 配置了 COS：优先 302 重定向到 COS 签名 URL（服务器零带宽转发）
+    if getattr(settings, 'USE_COS_STORAGE', False):
+        try:
+            if default_storage.exists(path):
+                return HttpResponseRedirect(default_storage.url(path))
+        except Exception:
+            pass  # COS 探测异常时回退本地磁盘
+
+    # 本地磁盘兜底（未配置 COS / COS 中不存在该文件）
     file_path = os.path.join(settings.MEDIA_ROOT, path)
 
     if not os.path.exists(file_path):
