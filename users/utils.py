@@ -24,11 +24,11 @@ def generate_random_username():
 
 def send_verify_email(to_email, code):
     """发送邮箱验证码"""
-    subject = '【动漫新闻站】邮箱验证码'
+    subject = '次元驿站邮箱验证码'
     message = f'您的验证码是：{code}，10分钟内有效。如果不是您本人操作，请忽略本邮件。'
     html_message = f'''
     <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px;border:1px solid #eee;border-radius:8px;">
-        <h2 style="color:#333;">动漫新闻站</h2>
+        <h2 style="color:#333;">次元驿站</h2>
         <p style="color:#666;">您的邮箱验证码是：</p>
         <div style="font-size:32px;font-weight:bold;color:#FB7299;letter-spacing:6px;padding:16px 0;text-align:center;">{code}</div>
         <p style="color:#999;font-size:13px;">验证码10分钟内有效，请勿泄露给他人。</p>
