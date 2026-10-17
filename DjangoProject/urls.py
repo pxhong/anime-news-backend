@@ -11,6 +11,8 @@ urlpatterns = [
 
     # ✅ 视频流接口
     path('media/<path:path>', video_stream, name='video_stream'),
+
+    path('api/', include('comments.urls')),
 ]
 
 # ✅ 开发环境下提供媒体文件（Django 静态服务）

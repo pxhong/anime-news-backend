@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'users',
     'works',
+    'comments',
 ]
 
 # ✅ 从环境变量读取 CORS_ALLOWED_ORIGINS
