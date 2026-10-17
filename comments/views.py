@@ -40,8 +40,8 @@ class WorkCommentListCreateView(generics.ListCreateAPIView):
 
         now = timezone.now()
         if Comment.objects.filter(user=request.user,
-                                  created_at__gte=now - timedelta(seconds=10)).exists():
-            return Response({'detail': '发言太快了，请 10 秒后再试'},
+                                  created_at__gte=now - timedelta(seconds=2)).exists():
+            return Response({'detail': '发送太频繁，请稍后再试'},
                             status=status.HTTP_429_TOO_MANY_REQUESTS)
 
         parent = None
