@@ -7,6 +7,7 @@ from datetime import datetime
 from django.conf import settings
 from django.core.files import File
 from django.core.files.storage import default_storage
+from django.db.models import F
 from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
@@ -100,6 +101,12 @@ class WorkViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'content']
     ordering_fields = ['created_at', 'views', 'likes']
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        Work.objects.filter(pk=instance.pk).update(views=F('views') + 1)
+        instance.refresh_from_db(fields=['views'])
+        return Response(self.get_serializer(instance).data)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
